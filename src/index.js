@@ -6,7 +6,6 @@ function toggleCheckbox() {
     this.nextElementSibling.classList.toggle('checked');
   });
 }
-toggleCheckbox();
 
 // cart
 function togglecart() {
@@ -23,7 +22,6 @@ function togglecart() {
     document.body.style.overflow = '';
   });
 }
-togglecart();
 
 
 // work with cart
@@ -70,7 +68,6 @@ function addCart() {
     }
   }
 }
-addCart();
 
 // filters
 function filters() {
@@ -95,8 +92,11 @@ function filters() {
     cards.forEach((card) => {
       const cardPrice = card.querySelector('.card-price');
       const price = parseFloat(cardPrice.textContent);
+      const discount = card.querySelector('.card-sale');
 
       if((min.value && price < min.value) || (max.value && price > max.value)) {
+        card.parentElement.style.display = 'none';
+      } else if(discountCheckbox.checked && !discount) {
         card.parentElement.style.display = 'none';
       } else {
         card.parentElement.style.display = '';
@@ -108,7 +108,6 @@ function filters() {
   max.addEventListener('change', filterPrice);
 
 }
-filters();
 
 // search
 function search() {
@@ -132,8 +131,89 @@ function search() {
 
   });
 }
-search();
 
+// get data from the server
+function getData() {
+  return fetch('../db/db.json').then((response) => {
+    if (response.ok) {
+      return response.json();
+    } else {
+      throw new Error('Данные не получены, ошибка: ' + response.status);
+    }
+  })
+  .then(res => res)
+  .catch(error => console.warn(error));
+}
+getData()
+  .then(data => {
+    renderCards(data);
+    toggleCheckbox();
+    togglecart();
+    addCart();
+    filters();
+    search();
+    renderCatalog();
+  });
+
+function renderCards(data) {
+  const goodsWrapper = document.body.querySelector('.goods');
+
+  data.goods.forEach((good) => {
+    const card = document.createElement('div');
+    card.className = 'col-12 col-md-6 col-lg-4 col-xl-3';
+    card.innerHTML = `
+      <div class="card" data-category="${good.category}">
+        ${good.sale ? '<div class="card-sale">🔥Hot Sale🔥</div>' : ''}
+        <div class="card-img-wrapper">
+          <span class="card-img-top"
+            style="background-image: url('${good.img}')">
+          </span>
+        </div>
+        <div class="card-body justify-content-between">
+          <div class="card-price">${good.price} ₽</div>
+          <h5 class="card-title">${good.title}</h5>
+          <button class="btn btn-primary">В корзину</button>
+        </div>
+      </div>
+    `;
+    goodsWrapper.appendChild(card);
+  });
+}
+
+function renderCatalog() {
+  const cards = document.body.querySelectorAll('.goods .card');
+  const categories = new Set();
+  const catalogList = document.body.querySelector('.catalog-list');
+  const btnCatalog = document.body.querySelector('.catalog-button');
+
+  cards.forEach((card) => {
+    categories.add(card.dataset.category);
+  });
+
+  categories.forEach((category) => {
+    const li = document.createElement('li');
+    li.textContent = category;
+    catalogList.appendChild(li);
+  });
+
+  btnCatalog.addEventListener('click', function(event) {
+    if (catalogList.parentElement.style.display) {
+    catalogList.parentElement.style.display = '';
+    } else {
+      catalogList.parentElement.style.display = 'block';
+    }
+
+    if (event.target.tagName === 'LI') {
+      cards.forEach((card) => {
+        if (card.dataset.category === event.target.textContent) {
+          card.parentElement.style.display = '';
+        } else {
+          card.parentElement.style.display = 'none';
+        }
+      });
+    }
+  });
+}
 
 
 
